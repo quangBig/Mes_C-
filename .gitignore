@@ -1,0 +1,17 @@
+## Ignore Visual Studio & VS Code temp/build files
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Ignore .NET build outputs
+bin/
+obj/
+
+## Ignore published outputs
+publish/
+
+## Ignore sensitive connection settings if needed (optional)
+# appsettings.Development.json
