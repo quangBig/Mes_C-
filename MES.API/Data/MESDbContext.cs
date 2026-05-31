@@ -49,7 +49,7 @@ namespace MES.API.Data
                     Id = 1,
                     UserName = "admin",
                     Email = "wuangbig204@gmail.com",
-                    PasswordHash = "admin",
+                    PasswordHash = "",
                     RoleId = 1
                 }
             );
