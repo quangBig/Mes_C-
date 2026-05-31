@@ -3,6 +3,7 @@ using MES.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MES.API.Migrations
 {
     [DbContext(typeof(MESDbContext))]
-    partial class MESDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260531070440_AddFactoryTable")]
+    partial class AddFactoryTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -120,36 +123,10 @@ namespace MES.API.Migrations
                         {
                             Id = 1,
                             Email = "wuangbig204@gmail.com",
-                            PasswordHash = "$2a$11$s0Xy/Hzdb4tj7W6FD/A6HupJbei42bMO2OlUADSww56PIPsqZTZIm",
+                            PasswordHash = "",
                             RoleId = 1,
                             UserName = "admin"
                         });
-                });
-
-            modelBuilder.Entity("MES.API.Models.Workshop", b =>
-                {
-                    b.Property<int>("WorkshopId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("WorkshopId"));
-
-                    b.Property<int>("FactoryId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("WorkshopCode")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("WorkshopName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("WorkshopId");
-
-                    b.HasIndex("FactoryId");
-
-                    b.ToTable("Workshops");
                 });
 
             modelBuilder.Entity("MES.API.Models.User", b =>
@@ -161,17 +138,6 @@ namespace MES.API.Migrations
                         .IsRequired();
 
                     b.Navigation("Role");
-                });
-
-            modelBuilder.Entity("MES.API.Models.Workshop", b =>
-                {
-                    b.HasOne("MES.API.Models.Factory", "Factory")
-                        .WithMany()
-                        .HasForeignKey("FactoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Factory");
                 });
 
             modelBuilder.Entity("MES.API.Models.Role", b =>
