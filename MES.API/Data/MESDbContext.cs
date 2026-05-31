@@ -10,6 +10,8 @@ namespace MES.API.Data
         : base(options) { }
         public DbSet<User> Users { get; set; }
         public DbSet<Role> Roles { get; set; }
+        public DbSet<Factory> Factories { get; set; }
+        public DbSet<Workshop> Workshops { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -49,7 +51,7 @@ namespace MES.API.Data
                     Id = 1,
                     UserName = "admin",
                     Email = "wuangbig204@gmail.com",
-                    PasswordHash = "",
+                    PasswordHash = "$2a$11$s0Xy/Hzdb4tj7W6FD/A6HupJbei42bMO2OlUADSww56PIPsqZTZIm",
                     RoleId = 1
                 }
             );

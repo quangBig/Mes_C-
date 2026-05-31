@@ -33,6 +33,9 @@ public class AuthController : ControllerBase
         if (user == null)
             return Unauthorized(new { message = "Tài khoản không tồn tại" });
 
+        if (string.IsNullOrEmpty(user.PasswordHash))
+            return Unauthorized(new { message = "Tài khoản chưa được thiết lập mật khẩu hợp lệ" });
+
         bool isPasswordValid = BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash);
 
         if (!isPasswordValid)
