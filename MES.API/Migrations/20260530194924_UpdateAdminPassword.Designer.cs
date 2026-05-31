@@ -3,6 +3,7 @@ using MES.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MES.API.Migrations
 {
     [DbContext(typeof(MESDbContext))]
-    partial class MESDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260530194924_UpdateAdminPassword")]
+    partial class UpdateAdminPassword
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -99,7 +102,7 @@ namespace MES.API.Migrations
                         {
                             Id = 1,
                             Email = "wuangbig204@gmail.com",
-                            PasswordHash = "$2a$11$rO.1FRr12DoWYDCVYZYBjucVsIx/.AeNE0ZI909y9FZEgwPXQHk9m",
+                            PasswordHash = "admin",
                             RoleId = 1,
                             UserName = "admin"
                         });
