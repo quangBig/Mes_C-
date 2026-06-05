@@ -12,6 +12,7 @@ namespace MES.API.Data
         public DbSet<Role> Roles { get; set; }
         public DbSet<Factory> Factories { get; set; }
         public DbSet<Workshop> Workshops { get; set; }
+        public DbSet<ProductionLine> ProductionLines { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
