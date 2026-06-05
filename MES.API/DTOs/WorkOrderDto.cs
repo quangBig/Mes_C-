@@ -6,7 +6,7 @@ namespace MES.API.DTOs;
 
 public class WorkOrderStatusOption
 {
-    public int    Id    { get; init; }
+    public int Id { get; init; }
     public string Value { get; init; } = string.Empty;
     public string Label { get; init; } = string.Empty;
 }
@@ -32,11 +32,14 @@ public class CreateWorkOrderDto
     [Required(ErrorMessage = "ProductId là bắt buộc.")]
     public int ProductId { get; set; }
 
+    [Required(ErrorMessage = "CreatedBy là bắt buộc.")]
+    public int CreatedBy { get; set; }
+
     [Range(1, int.MaxValue, ErrorMessage = "Quantity phải lớn hơn 0.")]
     public int Quantity { get; set; }
 
     public DateTime StartTime { get; set; }
-    public DateTime EndTime   { get; set; }
+    public DateTime EndTime { get; set; }
 }
 
 // ─── Update ──────────────────────────────────────────────────────────────────
@@ -51,7 +54,9 @@ public class UpdateWorkOrderDto
     public string WorkOrderCode { get; set; } = string.Empty;
 
     public DateTime StartTime { get; set; }
-    public DateTime EndTime   { get; set; }
+    public DateTime EndTime { get; set; }
+
+    public int CreatedBy { get; set; }
 
     [AllowedValues("Pending", "InProgress", "Completed", "Cancelled",
         ErrorMessage = "Status phải là: Pending, InProgress, Completed hoặc Cancelled.")]
@@ -62,21 +67,23 @@ public class UpdateWorkOrderDto
 
 public class SerialNumberDto
 {
-    public long   SerialNumberId { get; set; }
-    public string SerialCode     { get; set; } = string.Empty;
-    public string Status         { get; set; } = string.Empty;
+    public long SerialNumberId { get; set; }
+    public string SerialCode { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
 }
 
 public class WorkOrderResponseDto
 {
-    public int    WorkOrderId   { get; set; }
+    public int WorkOrderId { get; set; }
     public string WorkOrderCode { get; set; } = string.Empty;
-    public int    ProductId     { get; set; }
-    public string ProductCode   { get; set; } = string.Empty;
-    public string ProductName   { get; set; } = string.Empty;
-    public int    Quantity      { get; set; }
-    public DateTime StartTime   { get; set; }
-    public DateTime EndTime     { get; set; }
-    public string Status        { get; set; } = string.Empty;
+    public int ProductId { get; set; }
+    public string ProductCode { get; set; } = string.Empty;
+    public string ProductName { get; set; } = string.Empty;
+    public int Quantity { get; set; }
+    public int CreatedBy { get; set; }
+    public string CreatedByUserName { get; set; } = string.Empty;
+    public DateTime StartTime { get; set; }
+    public DateTime EndTime { get; set; }
+    public string Status { get; set; } = string.Empty;
     public List<SerialNumberDto> SerialNumbers { get; set; } = [];
 }

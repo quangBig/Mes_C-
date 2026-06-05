@@ -29,6 +29,7 @@ public class WorkOrderController : ControllerBase
         var list = await _context.WorkOrders
             .Include(w => w.Product)
             .Include(w => w.SerialNumbers)
+            .Include(w => w.CreatedByUser)
             .Select(w => new WorkOrderResponseDto
             {
                 WorkOrderId = w.WorkOrderId,
@@ -37,6 +38,8 @@ public class WorkOrderController : ControllerBase
                 ProductCode = w.Product != null ? w.Product.ProductCode : string.Empty,
                 ProductName = w.Product != null ? w.Product.ProductName : string.Empty,
                 Quantity = w.Quantity,
+                CreatedBy = w.CreatedBy,
+                CreatedByUserName = w.CreatedByUser != null ? w.CreatedByUser.UserName : string.Empty,
                 StartTime = w.StartTime,
                 EndTime = w.EndTime,
                 Status = w.Status,
@@ -60,6 +63,7 @@ public class WorkOrderController : ControllerBase
         var w = await _context.WorkOrders
             .Include(w => w.Product)
             .Include(w => w.SerialNumbers)
+            .Include(w => w.CreatedByUser)
             .FirstOrDefaultAsync(w => w.WorkOrderId == id);
 
         if (w == null) return NotFound();
@@ -72,6 +76,8 @@ public class WorkOrderController : ControllerBase
             ProductCode = w.Product?.ProductCode ?? string.Empty,
             ProductName = w.Product?.ProductName ?? string.Empty,
             Quantity = w.Quantity,
+            CreatedBy = w.CreatedBy,
+            CreatedByUserName = w.CreatedByUser?.UserName ?? string.Empty,
             StartTime = w.StartTime,
             EndTime = w.EndTime,
             Status = w.Status,
@@ -89,6 +95,13 @@ public class WorkOrderController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<WorkOrderResponseDto>> Create([FromBody] CreateWorkOrderDto dto)
     {
+        // Validation: User created phải tồn tại
+        var user = await _context.Users.FindAsync(dto.CreatedBy);
+        if (user == null)
+        {
+            return BadRequest("User created không tồn tại.");
+        }
+
         // Validation: Product phải tồn tại
         var product = await _context.Products.FindAsync(dto.ProductId);
         if (product == null)
@@ -114,6 +127,7 @@ public class WorkOrderController : ControllerBase
             WorkOrderCode = dto.WorkOrderCode,
             ProductId = dto.ProductId,
             Quantity = dto.Quantity,
+            CreatedBy = dto.CreatedBy,
             StartTime = dto.StartTime,
             EndTime = dto.EndTime,
             Status = WorkOrderStatus.Pending
@@ -143,6 +157,8 @@ public class WorkOrderController : ControllerBase
             ProductCode = product.ProductCode,
             ProductName = product.ProductName,
             Quantity = workOrder.Quantity,
+            CreatedBy = workOrder.CreatedBy,
+            CreatedByUserName = user.UserName,
             StartTime = workOrder.StartTime,
             EndTime = workOrder.EndTime,
             Status = workOrder.Status,
@@ -164,6 +180,13 @@ public class WorkOrderController : ControllerBase
         var workOrder = await _context.WorkOrders.FindAsync(id);
         if (workOrder == null) return NotFound();
 
+        // Validation: User created phải tồn tại
+        var userExists = await _context.Users.AnyAsync(u => u.Id == dto.CreatedBy);
+        if (!userExists)
+        {
+            return BadRequest("User created không tồn tại.");
+        }
+
         // Validation: EndTime > StartTime
         if (dto.EndTime <= dto.StartTime)
             return BadRequest("Thời gian kết thúc phải lớn hơn thời gian bắt đầu.");
@@ -176,6 +199,7 @@ public class WorkOrderController : ControllerBase
 
         //  Chỉ cho phép sửa 4 trường — Quantity & ProductId bị khóa
         workOrder.WorkOrderCode = dto.WorkOrderCode;
+        workOrder.CreatedBy = dto.CreatedBy;
         workOrder.StartTime = dto.StartTime;
         workOrder.EndTime = dto.EndTime;
         workOrder.Status = dto.Status;
@@ -185,7 +209,7 @@ public class WorkOrderController : ControllerBase
     }
 
     // PATCH: api/WorkOrder/{id}/cancel
-    // ✅ Hủy WorkOrder và đánh dấu các Serial Pending → Cancelled
+    // Hủy WorkOrder và đánh dấu các Serial Pending → Cancelled
     [Authorize(Roles = "Admin")]
     [HttpPatch("{id}/cancel")]
     public async Task<IActionResult> Cancel(int id)
