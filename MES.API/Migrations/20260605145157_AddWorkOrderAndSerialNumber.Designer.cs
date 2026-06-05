@@ -4,6 +4,7 @@ using MES.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MES.API.Migrations
 {
     [DbContext(typeof(MESDbContext))]
-    partial class MESDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260605145157_AddWorkOrderAndSerialNumber")]
+    partial class AddWorkOrderAndSerialNumber
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -166,11 +169,11 @@ namespace MES.API.Migrations
 
             modelBuilder.Entity("MES.API.Models.SerialNumber", b =>
                 {
-                    b.Property<long>("SerialNumberId")
+                    b.Property<int>("SerialNumberId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("SerialNumberId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SerialNumberId"));
 
                     b.Property<string>("SerialCode")
                         .IsRequired()

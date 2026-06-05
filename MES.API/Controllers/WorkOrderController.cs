@@ -1,0 +1,224 @@
+using MES.API.Data;
+using MES.API.DTOs;
+using MES.API.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace MES.API.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+[Authorize]
+public class WorkOrderController : ControllerBase
+{
+    private readonly MESDbContext _context;
+
+    public WorkOrderController(MESDbContext context) => _context = context;
+
+    // GET: api/WorkOrder/statuses
+    [HttpGet("statuses")]
+    public ActionResult<IEnumerable<WorkOrderStatusOption>> GetStatuses()
+        => Ok(WorkOrderStatusList.AllOptions);
+
+    // GET: api/WorkOrder
+    [Authorize(Roles = "Admin")]
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<WorkOrderResponseDto>>> GetAll()
+    {
+        var list = await _context.WorkOrders
+            .Include(w => w.Product)
+            .Include(w => w.SerialNumbers)
+            .Select(w => new WorkOrderResponseDto
+            {
+                WorkOrderId = w.WorkOrderId,
+                WorkOrderCode = w.WorkOrderCode,
+                ProductId = w.ProductId,
+                ProductCode = w.Product != null ? w.Product.ProductCode : string.Empty,
+                ProductName = w.Product != null ? w.Product.ProductName : string.Empty,
+                Quantity = w.Quantity,
+                StartTime = w.StartTime,
+                EndTime = w.EndTime,
+                Status = w.Status,
+                SerialNumbers = w.SerialNumbers.Select(s => new SerialNumberDto
+                {
+                    SerialNumberId = s.SerialNumberId,
+                    SerialCode = s.SerialCode,
+                    Status = s.Status
+                }).ToList()
+            })
+            .ToListAsync();
+
+        return Ok(list);
+    }
+
+    // GET: api/WorkOrder/{id}
+    [Authorize(Roles = "Admin")]
+    [HttpGet("{id}")]
+    public async Task<ActionResult<WorkOrderResponseDto>> Get(int id)
+    {
+        var w = await _context.WorkOrders
+            .Include(w => w.Product)
+            .Include(w => w.SerialNumbers)
+            .FirstOrDefaultAsync(w => w.WorkOrderId == id);
+
+        if (w == null) return NotFound();
+
+        return Ok(new WorkOrderResponseDto
+        {
+            WorkOrderId = w.WorkOrderId,
+            WorkOrderCode = w.WorkOrderCode,
+            ProductId = w.ProductId,
+            ProductCode = w.Product?.ProductCode ?? string.Empty,
+            ProductName = w.Product?.ProductName ?? string.Empty,
+            Quantity = w.Quantity,
+            StartTime = w.StartTime,
+            EndTime = w.EndTime,
+            Status = w.Status,
+            SerialNumbers = w.SerialNumbers.Select(s => new SerialNumberDto
+            {
+                SerialNumberId = s.SerialNumberId,
+                SerialCode = s.SerialCode,
+                Status = s.Status
+            }).ToList()
+        });
+    }
+
+    // POST: api/WorkOrder
+    [Authorize(Roles = "Admin")]
+    [HttpPost]
+    public async Task<ActionResult<WorkOrderResponseDto>> Create([FromBody] CreateWorkOrderDto dto)
+    {
+        // Validation: Product phải tồn tại
+        var product = await _context.Products.FindAsync(dto.ProductId);
+        if (product == null)
+            return BadRequest("Sản phẩm không tồn tại.");
+
+        // Validation: Quantity > 0 (đã có [Range] trong DTO, thêm tường minh)
+        if (dto.Quantity <= 0)
+            return BadRequest("Số lượng phải lớn hơn 0.");
+
+        // Validation: EndTime > StartTime
+        if (dto.EndTime <= dto.StartTime)
+            return BadRequest("Thời gian kết thúc phải lớn hơn thời gian bắt đầu.");
+
+        // Validation: WorkOrderCode không được trùng
+        var codeExists = await _context.WorkOrders
+            .AnyAsync(w => w.WorkOrderCode == dto.WorkOrderCode);
+        if (codeExists)
+            return BadRequest($"WorkOrderCode '{dto.WorkOrderCode}' đã tồn tại.");
+
+        // Tạo WorkOrder
+        var workOrder = new WorkOrder
+        {
+            WorkOrderCode = dto.WorkOrderCode,
+            ProductId = dto.ProductId,
+            Quantity = dto.Quantity,
+            StartTime = dto.StartTime,
+            EndTime = dto.EndTime,
+            Status = WorkOrderStatus.Pending
+        };
+
+        _context.WorkOrders.Add(workOrder);
+        await _context.SaveChangesAsync(); // Lưu để có WorkOrderId
+
+        // Tự động sinh Serial Numbers
+        var serials = Enumerable.Range(1, dto.Quantity)
+            .Select(i => new SerialNumber
+            {
+                WorkOrderId = workOrder.WorkOrderId,
+                SerialCode = $"{product.ProductCode}-{dto.WorkOrderCode}-{i:D4}",
+                Status = SerialStatus.Pending
+            })
+            .ToList();
+
+        _context.SerialNumbers.AddRange(serials);
+        await _context.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(Get), new { id = workOrder.WorkOrderId }, new WorkOrderResponseDto
+        {
+            WorkOrderId = workOrder.WorkOrderId,
+            WorkOrderCode = workOrder.WorkOrderCode,
+            ProductId = workOrder.ProductId,
+            ProductCode = product.ProductCode,
+            ProductName = product.ProductName,
+            Quantity = workOrder.Quantity,
+            StartTime = workOrder.StartTime,
+            EndTime = workOrder.EndTime,
+            Status = workOrder.Status,
+            SerialNumbers = serials.Select(s => new SerialNumberDto
+            {
+                SerialNumberId = s.SerialNumberId,
+                SerialCode = s.SerialCode,
+                Status = s.Status
+            }).ToList()
+        });
+    }
+
+    // PUT: api/WorkOrder/{id}
+    //  Không thể sửa Quantity và ProductId sau khi đã sinh Serial Numbers.
+    [Authorize(Roles = "Admin")]
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateWorkOrderDto dto)
+    {
+        var workOrder = await _context.WorkOrders.FindAsync(id);
+        if (workOrder == null) return NotFound();
+
+        // Validation: EndTime > StartTime
+        if (dto.EndTime <= dto.StartTime)
+            return BadRequest("Thời gian kết thúc phải lớn hơn thời gian bắt đầu.");
+
+        // Validation: WorkOrderCode không được trùng với WorkOrder khác
+        var codeExists = await _context.WorkOrders
+            .AnyAsync(w => w.WorkOrderCode == dto.WorkOrderCode && w.WorkOrderId != id);
+        if (codeExists)
+            return BadRequest($"WorkOrderCode '{dto.WorkOrderCode}' đã tồn tại.");
+
+        //  Chỉ cho phép sửa 4 trường — Quantity & ProductId bị khóa
+        workOrder.WorkOrderCode = dto.WorkOrderCode;
+        workOrder.StartTime = dto.StartTime;
+        workOrder.EndTime = dto.EndTime;
+        workOrder.Status = dto.Status;
+
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    // PATCH: api/WorkOrder/{id}/cancel
+    // ✅ Hủy WorkOrder và đánh dấu các Serial Pending → Cancelled
+    [Authorize(Roles = "Admin")]
+    [HttpPatch("{id}/cancel")]
+    public async Task<IActionResult> Cancel(int id)
+    {
+        var workOrder = await _context.WorkOrders
+            .Include(w => w.SerialNumbers)
+            .FirstOrDefaultAsync(w => w.WorkOrderId == id);
+
+        if (workOrder == null) return NotFound();
+
+        if (workOrder.Status == WorkOrderStatus.Completed)
+            return BadRequest("Không thể hủy WorkOrder đã hoàn thành.");
+
+        // Hủy WorkOrder (nếu chưa Cancelled)
+        workOrder.Status = WorkOrderStatus.Cancelled;
+
+        // Đánh dấu tất cả Serial còn Pending → Cancelled
+        var pendingSerials = workOrder.SerialNumbers
+            .Where(s => s.Status == SerialStatus.Pending)
+            .ToList();
+
+        foreach (var serial in pendingSerials)
+        {
+            serial.Status = SerialStatus.Cancelled;
+        }
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            message = "WorkOrder đã được hủy.",
+            cancelled = pendingSerials.Count,
+            workOrderId = workOrder.WorkOrderId
+        });
+    }
+}
