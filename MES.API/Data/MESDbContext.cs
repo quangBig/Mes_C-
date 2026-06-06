@@ -17,9 +17,33 @@ namespace MES.API.Data
         public DbSet<Product> Products { get; set; }
         public DbSet<WorkOrder> WorkOrders { get; set; }
         public DbSet<SerialNumber> SerialNumbers { get; set; }
+        public DbSet<Defect> Defects { get; set; }
+        public DbSet<ProductionTracking> ProductionTrackings { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Ràng buộc duy nhất cho SerialCode
+            modelBuilder.Entity<SerialNumber>()
+                .HasIndex(s => s.SerialCode)
+                .IsUnique();
+
+            // Tránh vòng lặp cascade delete giữa WorkOrder -> SerialNumber -> ProductionTracking
+            modelBuilder.Entity<ProductionTracking>()
+                .HasOne(pt => pt.WorkOrder)
+                .WithMany()
+                .HasForeignKey(pt => pt.WorkOrderId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Seed defects
+            modelBuilder.Entity<Defect>().HasData(
+                new Defect { DefectId = 1, DefectCode = "DF001", DefectName = "Missing Component" },
+                new Defect { DefectId = 2, DefectCode = "DF002", DefectName = "Wrong Part" },
+                new Defect { DefectId = 3, DefectCode = "DF003", DefectName = "Solder Bridge" },
+                new Defect { DefectId = 4, DefectCode = "DF004", DefectName = "Tombstone" },
+                new Defect { DefectId = 5, DefectCode = "DF005", DefectName = "Insufficient Solder" }
+            );
+
             // Seed roles
             modelBuilder.Entity<Role>().HasData(
                 new Role

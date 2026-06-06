@@ -8,6 +8,7 @@ public static class SerialStatus
     public const string Pending   = "Pending";   // Chưa sản xuất
     public const string Pass      = "Pass";      // Đạt
     public const string Fail      = "Fail";      // Lỗi
+    public const string Rework    = "Rework";    // Chờ sửa chữa
     public const string Cancelled = "Cancelled"; // Bị hủy theo WorkOrder
 }
 

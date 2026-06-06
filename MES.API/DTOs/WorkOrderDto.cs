@@ -84,6 +84,7 @@ public class WorkOrderResponseDto
     public string CreatedByUserName { get; set; } = string.Empty;
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
+    public DateTime CreatedAt { get; set; }
     public string Status { get; set; } = string.Empty;
     public List<SerialNumberDto> SerialNumbers { get; set; } = [];
 }

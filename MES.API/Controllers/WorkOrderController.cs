@@ -42,6 +42,7 @@ public class WorkOrderController : ControllerBase
                 CreatedByUserName = w.CreatedByUser != null ? w.CreatedByUser.UserName : string.Empty,
                 StartTime = w.StartTime,
                 EndTime = w.EndTime,
+                CreatedAt = w.CreatedAt,
                 Status = w.Status,
                 SerialNumbers = w.SerialNumbers.Select(s => new SerialNumberDto
                 {
@@ -80,6 +81,7 @@ public class WorkOrderController : ControllerBase
             CreatedByUserName = w.CreatedByUser?.UserName ?? string.Empty,
             StartTime = w.StartTime,
             EndTime = w.EndTime,
+            CreatedAt = w.CreatedAt,
             Status = w.Status,
             SerialNumbers = w.SerialNumbers.Select(s => new SerialNumberDto
             {
@@ -130,6 +132,7 @@ public class WorkOrderController : ControllerBase
             CreatedBy = dto.CreatedBy,
             StartTime = dto.StartTime,
             EndTime = dto.EndTime,
+            CreatedAt = DateTime.Now,
             Status = WorkOrderStatus.Pending
         };
 
@@ -161,6 +164,7 @@ public class WorkOrderController : ControllerBase
             CreatedByUserName = user.UserName,
             StartTime = workOrder.StartTime,
             EndTime = workOrder.EndTime,
+            CreatedAt = workOrder.CreatedAt,
             Status = workOrder.Status,
             SerialNumbers = serials.Select(s => new SerialNumberDto
             {
@@ -243,6 +247,48 @@ public class WorkOrderController : ControllerBase
             message = "WorkOrder đã được hủy.",
             cancelled = pendingSerials.Count,
             workOrderId = workOrder.WorkOrderId
+        });
+    }
+
+    // GET: api/WorkOrder/{id}/stats
+    // ✅ Thống kê chi tiết tiến độ sản xuất và hiệu suất Yield của Lệnh sản xuất
+    [Authorize(Roles = "Admin")]
+    [HttpGet("{id}/stats")]
+    public async Task<IActionResult> GetStats(int id)
+    {
+        var workOrder = await _context.WorkOrders.FindAsync(id);
+        if (workOrder == null) return NotFound();
+
+        int quantity = workOrder.Quantity;
+
+        int pass = await _context.SerialNumbers
+            .CountAsync(s => s.WorkOrderId == id && s.Status == SerialStatus.Pass);
+
+        int fail = await _context.SerialNumbers
+            .CountAsync(s => s.WorkOrderId == id && s.Status == SerialStatus.Fail);
+
+        int processed = pass + fail;
+
+        double yield = 0;
+        if (processed > 0)
+        {
+            yield = Math.Round(((double)pass / processed) * 100, 2);
+        }
+
+        double defectRate = 0;
+        if (processed > 0)
+        {
+            defectRate = Math.Round(((double)fail / processed) * 100, 2);
+        }
+
+        return Ok(new
+        {
+            quantity = quantity,
+            processed = processed,
+            pass = pass,
+            fail = fail,
+            yield = yield,
+            defectRate = defectRate
         });
     }
 }

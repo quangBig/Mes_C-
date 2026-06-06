@@ -11,6 +11,7 @@ public class WorkOrder
     public int Quantity { get; set; }
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
 
     /// <summary>Pending | InProgress | Completed | Cancelled</summary>
     public string Status { get; set; } = WorkOrderStatus.Pending;
