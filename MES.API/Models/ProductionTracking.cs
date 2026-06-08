@@ -31,3 +31,17 @@ public class ProductionTracking
     [ForeignKey("DefectId")]
     public Defect? Defect { get; set; }
 }
+
+public static class TrackingResult
+{
+    public const string Pass = "Pass";
+    public const string Fail = "Fail";
+}
+
+public static class ScanSourceType
+{
+    public const string Manual = "Manual";
+    public const string Machine = "Machine";
+    public const string Simulation = "Simulation";
+}
+
